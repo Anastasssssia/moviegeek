@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-        {% load staticfiles %}
-
+  <head>
+    {% load static %}
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MovieGEEKs</title>
@@ -24,42 +23,90 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script src="{% static 'js/collector.js' %}"></script>
-    <script src="http://d3js.org/d3.v3.min.js"></script>
-    <script src="http://dimplejs.org/dist/dimple.v2.2.0.min.js"></script>
+    <title>User</title>
 </head>
 <body>
-    <div class="container">
-        <div class="row">
-            <h2>Cluster {{ cluster_id }}</h2>
-            <p>Cluster has {{members_count}} members</p>
+<div class='container'>
+  <div class='row'>
+    <h1>{{ title }} (id: {{ content_id }})</h1>
 
-        </div>
-        <div class="row">
-
-            <div id="chartContainer">
-              <script type="text/javascript">
-                var svg = dimple.newSvg("#chartContainer", 700, 400);
-                var data = [
-                  {% for key, value in genres.items %}
-                    { "name": '{{key}}', "value": {{value}} },
-                  {% endfor %}
-                ];
-                var chart = new dimple.chart(svg, data);
-                chart.setBounds(50, 10, 600, 300);
-
-                x = chart.addCategoryAxis("x", "name");
-                y = chart.addMeasureAxis("y", "value");
-                chart.addSeries(null, dimple.plot.bar);
-                x.addOrderRule("name")
-                chart.draw();
-              </script>
-            </div>
-        </div>
-        <div class="row">
-            {% for user_id in members %}
-                <a href="/analytics/user/{{ user_id}}">{{ user_id }}</a>
-            {% endfor%}
-        </div>
+    <div>
+      Average rating: {{ avg_rating }} / 10 (with {{ number_users }} ratings)
     </div>
+
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div >
+        <h3>Description</h3>
+          <b>Overview:</b> <span id="overview"></span><br/>
+          <b>Release-date:</b>  <span id="release_date"></span><br/>
+          <b>Lan:</b> <span id="lan"></span><br/>
+          <b>Genres:</b> <span id="genres">
+      |{% for genre in genres %}
+        {{ genre.name }} |
+      {% endfor %}</span>
+
+      </div>
+
+    </div>
+    <div id="img" class="col-sm-6">
+        <img id="poster" class="img-responsive" src="" alt="movie poster"/>
+    </div>
+  </div>
+
+
+  <div id="chartContainer">
+    <script src="/lib/d3.v3.4.8.js"></script>
+    <script src="http://dimplejs.org/dist/dimple.v2.2.0.min.js"></script>
+    <script type="text/javascript">
+      var svg = dimple.newSvg("#chartContainer", 590, 400);
+      d3.json("/data/example_data.tsv", function (data) {
+        data = dimple.filterData(data, "Owner", ["Aperture", "Black Mesa"])
+        var myChart = new dimple.chart(svg, data);
+        myChart.setBounds(60, 30, 505, 305);
+        var x = myChart.addCategoryAxis("x", "Month");
+        x.addOrderRule("Date");
+        myChart.addMeasureAxis("y", "Unit Sales");
+        var s = myChart.addSeries("Channel", dimple.plot.area);
+        s.interpolation = "step";
+        s.lineWeight = 1;
+        myChart.addLegend(60, 10, 500, 20, "right");
+        myChart.draw();
+      });
+    </script>
+  </div>
+  <div class="row">
+    <h2>Recent Log</h2>
+    <ul>
+      {% for row in logs %}
+       <li><a href="/analytics/user/{{ row.user_id }}">{{ row.user_id }}</a> | {{ row.event }} | {{ row.created }} </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+</div>
+<script type="text/javascript">
+  function getinfo(movieid) {
+            url = 'http://www.omdbapi.com/?i=tt'+movieid+'&apikey={{ api_key }}'
+
+            $.getJSON(url,
+                      function(result) {
+                        image_url = 'http://image.tmdb.org/t/p/w500/'
+                            + result.movie_results[0].poster_path
+
+                        img_tag = document.getElementById('poster').setAttribute('src', image_url)
+
+                        document.getElementById('overview').innerHTML = result.movie_results[0].overview
+                        document.getElementById('release_date').innerHTML =  result.movie_results[0].release_date
+                        document.getElementById('lan').innerHTML =  result.movie_results[0].original_language
+
+
+                } )}
+
+  getinfo('{{ content_id }}')
+
+</script>
+
 </body>
 </html>
