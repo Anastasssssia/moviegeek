@@ -33,12 +33,12 @@ def recs_using_association_rules(request, user_id, take=6):
                         .values_list('content_id', flat=True)\
                         .distinct()
     
-    print(f"Events for user {user_id}: {list(events)}")
+    # print(f"Events for user {user_id}: {list(events)}")
 
     # Take the first 20 unique content_ids as seeds
     # seeds = set(events[:20])
     seeds = set(event for event in events[:50] if event != '0')
-    print(f"Seeds: {seeds}")
+    # print(f"Seeds: {seeds}")
 
     # Fetch association rules for the seeds, excluding the seeds themselves
     rules = SeededRecs.objects.filter(source__in=seeds) \
@@ -47,13 +47,13 @@ def recs_using_association_rules(request, user_id, take=6):
         .annotate(confidence=Avg('confidence')) \
         .order_by('-confidence')
     
-    print(f"Rules: {list(rules)}")
+    # print(f"Rules: {list(rules)}")
 
     # Prepare the recommendations
     recs = [{'id': '{0:07d}'.format(int(rule['target'])),
              'confidence': rule['confidence']} for rule in rules]
 
-    print(f"Recommendations: {recs[:take]}")
+    # print(f"Recommendations: {recs[:take]}")
     return JsonResponse(dict(data=list(recs[:take])))
 
 
@@ -190,7 +190,7 @@ def recs_fwls(request, user_id, num=6):
     return JsonResponse(data, safe=False)
 
 def recs_funksvd(request, user_id, num=6):
-    sorted_items = FunkSVDRecs().recommend_items(user_id, num)
+    sorted_items = FunkSVDRecs().recommend_items(user_id, num=6)
 
     data = {
         'user_id': user_id,
@@ -199,7 +199,7 @@ def recs_funksvd(request, user_id, num=6):
     return JsonResponse(data, safe=False)
 
 def recs_bpr(request, user_id, num=6):
-    sorted_items = BPRRecs().recommend_items(user_id, num)
+    sorted_items = BPRRecs().recommend_items(user_id, num=6)
 
     data = {
         'user_id': user_id,
