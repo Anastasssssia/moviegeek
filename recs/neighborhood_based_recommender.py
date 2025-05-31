@@ -15,13 +15,11 @@ class NeighborhoodBasedRecs(base_recommender):
         self.max_candidates = 100
 
     def recommend_items(self, user_id, num=6):
-
         active_user_items = Rating.objects.filter(user_id=user_id).order_by('-rating')[:100]
-
-        return self.recommend_items_by_ratings(user_id, active_user_items.values())
+        # print("active_user_items", active_user_items)
+        return self.recommend_items_by_ratings(user_id, active_user_items.values(), num)
 
     def recommend_items_by_ratings(self, user_id, active_user_items, num=6):
-
         if len(active_user_items) == 0:
             return {}
 
@@ -35,7 +33,6 @@ class NeighborhoodBasedRecs(base_recommender):
                                                     )
         candidate_items = candidate_items.order_by('-similarity')[:self.max_candidates]
 
-
         recs = dict()
         for candidate in candidate_items:
             target = candidate.target
@@ -45,7 +42,7 @@ class NeighborhoodBasedRecs(base_recommender):
 
             rated_items = [i for i in candidate_items if i.target == target][:self.neighborhood_size]
 
-            if len(rated_items) > 1:
+            if len(rated_items) >= 1:
                 for sim_item in rated_items:
                     r = Decimal(movie_ids[sim_item.source] - user_mean)
                     pre += sim_item.similarity * r
@@ -53,8 +50,8 @@ class NeighborhoodBasedRecs(base_recommender):
                 if sim_sum > 0:
                     recs[target] = {'prediction': Decimal(user_mean) + pre / sim_sum,
                                     'sim_items': [r.source for r in rated_items]}
-
         sorted_items = sorted(recs.items(), key=lambda item: -float(item[1]['prediction']))[:num]
+        # print("sorted items", sorted_items)
         return sorted_items
 
     def predict_score(self, user_id, item_id):
